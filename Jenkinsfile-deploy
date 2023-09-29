@@ -1,0 +1,20 @@
+#!/usr/bin/env groovy
+
+node('deploy-gitops'){
+    container('run'){
+        stage( 'Checkout'){
+            checkout scm
+        }
+        def tag = "${GIT_TAG}"
+        env = params.ENVIRONMENT
+
+        wrap([$class: 'BuildUser']) {
+            sshagent(credentials: ['gitops']) {
+                stage('backend') {
+                    sh( "fnxctl deploy --method=gitops --env='${env}' ${tag}")
+                }
+
+            }
+        }
+    }
+}
