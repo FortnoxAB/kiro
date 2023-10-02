@@ -1,0 +1,8 @@
+---
+# this is only deployed on DEV not acce or production
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kiro
+  namespace: default
+data:

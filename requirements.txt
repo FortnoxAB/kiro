@@ -1,0 +1,5 @@
+netaddr
+dnspython
+requests
+tld
+python3-nmap

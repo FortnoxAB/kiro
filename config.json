@@ -1,0 +1,20 @@
+{
+  "serviceName": "kiro",
+  "language": "python",
+  "environments": {
+    "default": {
+      "replicas": "1"
+    }
+  },
+  "team": "infosec",
+  "jenkins": {
+    "jobs": [
+      {
+        "name": "deploy-acce"
+      },
+      {
+        "name": "deploy-prod"
+      }
+    ]
+  }
+}
