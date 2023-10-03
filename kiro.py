@@ -126,7 +126,7 @@ else:
     targets = os.environ['KIRO_TARGETS'].split(',') # Swap this to getenv
 
 # Check if we're running this as a service, loop if true
-if args.daemon:
+if args.daemon or os.environ['KIRO_DAEMON'].lower() == 'true':
     service_main()
 else:
     nmapdata = main()
