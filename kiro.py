@@ -88,7 +88,7 @@ def service_main():
             nmapjson = json.dumps(nmapdata,indent=2)
             print(nmapjson)
         # Sleep for a bit or we will hog CPUs
-        time.sleep(1)
+        time.sleep(os.environ.get('KIRO_INTERVAL',1))
         first_run = False
 
 def main():
@@ -122,11 +122,16 @@ current_date_time = time.strftime("%Y%m%d-%H%M%S")
 # Use host argument as target if present else use predefined
 if args.hosts:
     targets = args.hosts.split(',')
-else:    
-    targets = os.environ['KIRO_TARGETS'].split(',') # Swap this to getenv
+else:
+    try:
+        targets = os.environ['KIRO_TARGETS'].split(',') # Swap this to getenv
+    except KeyError:
+        # No targets specified, exit with error
+        print('No targets specified', file=sys.stderr)
+        exit(1)
 
 # Check if we're running this as a service, loop if true
-if args.daemon or os.environ['KIRO_DAEMON'].lower() == 'true':
+if args.daemon or os.environ.get('KIRO_DAEMON','false').lower() == 'true':
     service_main()
 else:
     nmapdata = main()
