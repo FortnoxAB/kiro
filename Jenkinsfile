@@ -16,7 +16,7 @@ node('python311') {
                 tag = gitTag
             }else if (env.BRANCH_NAME == 'main') {
                 stage('create tag') {
-                    sshagent(credentials: ['18270936-0906-4c40-a90e-bcf6661f501d']) {
+                    sshagent(credentials: ['github-key']) {
                         tag = sh(
                                 script: 'fnxctl git bump-tag',
                                 returnStdout: true
@@ -37,7 +37,7 @@ node('python311') {
             }
         } catch (err) {
             if (createdTag) {
-                sshagent(credentials: ['18270936-0906-4c40-a90e-bcf6661f501d']) {
+                sshagent(credentials: ['github-key']) {
                     sh("git tag -d ${tag}")
                     sh("git push --delete origin ${tag}")
                 }
