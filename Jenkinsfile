@@ -34,6 +34,11 @@ node('python311') {
                         sh("fnxctl build backend ${tag}")
                     }
                 }
+                stage('Trigger deploy to dev') {
+					build job: 'infosec/kiro/deploy-dev', parameters: [
+							[$class: 'StringParameterValue', name: 'GIT_TAG', value: gitTag]
+					], wait: false
+				}
             }
         } catch (err) {
             if (createdTag) {
