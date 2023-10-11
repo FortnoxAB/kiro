@@ -36,7 +36,7 @@ node('python311') {
                 }
                 stage('Trigger deploy to dev') {
 					build job: 'infosec/kiro/deploy-dev', parameters: [
-							[$class: 'StringParameterValue', name: 'GIT_TAG', value: gitTag]
+							[$class: 'StringParameterValue', name: 'GIT_TAG', value: tag]
 					], wait: false
 				}
             }
