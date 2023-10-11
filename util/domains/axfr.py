@@ -35,7 +35,7 @@ def is_domain_available_for_axfr(domain_name):
                     zone = dns.zone.from_xfr(dns.query.xfr(nameserver_ip, domain_name))
                     # If the zone transfer was successful, the domain is available for AXFR
                     return True
-            except dns.exception.FormError:
+            except (dns.exception.FormError, ConnectionResetError):
                 continue  # Move to the next nameserver if this one failed
                 
         # If all nameservers failed, the domain is not available for AXFR
