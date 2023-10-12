@@ -25,7 +25,10 @@ def collect_targets(targets):
         except: 
             # Check if target is a topdomain, enumerate subdomains and resolve those if so.
             if is_subdomain(target) == False:
-                dns_enum_result  = dns_enum(target, args.wordlist)
+                if args.wordlist:
+                    dns_enum_result  = dns_enum(target, args.wordlist)
+                else:
+                    dns_enum_result  = dns_enum(target, "./subdomains.txt")
                 for domain_item in dns_enum_result:
                     expanded_targets.append(domain_item['address'])
                     enum_domains.append(domain_item)
