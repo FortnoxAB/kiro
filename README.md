@@ -7,20 +7,29 @@ Make sure you have docker available or python setup with nmap from your packaged
 ```
 pip3 install -r requirements.txt
 ```
+## Environment
+
+>KIRO_DAEMON, set to true if you wish kiro as a daemon.  
+KIRO_TARGET, List of hosts, CIDRs and domains separated by commas  
+KIRO_INTERVAL, Add interval (in seconds) between runs when run as daemon.  
 
 ## Usage
 
 ```
-usage: kiro.py [-h] [-D] [-H HOSTS] [-c] [-f]
+usage: kiro.py [-h] [-D] [-H HOSTS] [-c] [-f] [-p] [-wl WORDLIST]
+
+Scan networks + domains to assess and improve security posture.
 
 options:
-  -h, --help              Show this help message and exit
-  -D, --daemon            Run as service
-  -H HOSTS, --hosts HOSTS Set targets and override KIRO_TARGETS env.
-                          List of hosts, CIDRs and domains separated by commas
-  -c, --compare           Compare output to previous file
-  -f, --file              Write json output to file
-  -p, --pretty            
+  -h, --help            show this help message and exit
+  -D, --daemon          Run as service
+  -H HOSTS, --hosts HOSTS
+                        List of hosts separated by commas
+  -c, --compare         Compare output to previous file
+  -f, --file            Write json output to file
+  -p, --pretty          Prettier output
+  -wl WORDLIST, --wordlist WORDLIST
+                        Specify wordlist-file with subdomains
 ```
 Examples:
 ```
@@ -30,10 +39,9 @@ docker run -e KIRO_TARGETS=security.guru,10.0.0.0/8 quay.io/fortnox/kiro:0.1
 
 ## Todo
 
-Ensure that requirements.txt is up to date
-Slack notifications
-Prettier output
-More detections
+* Prettier output
+* Slack notifications
+* More detections
 
 ## Author
 

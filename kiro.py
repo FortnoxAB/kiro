@@ -25,7 +25,7 @@ def collect_targets(targets):
         except: 
             # Check if target is a topdomain, enumerate subdomains and resolve those if so.
             if is_subdomain(target) == False:
-                dns_enum_result  = dns_enum(target)
+                dns_enum_result  = dns_enum(target, args.wordlist)
                 for domain_item in dns_enum_result:
                     expanded_targets.append(domain_item['address'])
                     enum_domains.append(domain_item)
@@ -74,6 +74,13 @@ def cleanup_nmap_object(nmapdata, domains):
                     continue
     return nmapdata
 
+def print_json(objectdata):
+    if args.pretty:
+        jsonobject = json.dumps(objectdata,indent=2)
+    else:
+        jsonobject = json.dumps(objectdata)
+    print(jsonobject)
+
 def service_main():
     first_run = True
     while True:
@@ -84,9 +91,7 @@ def service_main():
         if first_run == False:
             compare_dicts(previous_nmapdata,nmapdata)
         else:
-            # Print scan data
-            nmapjson = json.dumps(nmapdata,indent=2)
-            print(nmapjson)
+            print_json(nmapdata)
         # Sleep for a bit or we will hog CPUs
         time.sleep(os.environ.get('KIRO_INTERVAL',1))
         first_run = False
@@ -113,6 +118,7 @@ parser.add_argument("-H", "--hosts",help="List of hosts separated by commas", ty
 parser.add_argument("-c", "--compare",action='store_true', help='Compare output to previous file')
 parser.add_argument("-f", "--file",action='store_true',help='Write json output to file')
 parser.add_argument("-p", "--pretty",action='store_true',help='Prettier output')
+parser.add_argument("-wl", "--wordlist",help='Specify wordlist-file with subdomains', type=str  )
 
 args = parser.parse_args()
 
@@ -135,13 +141,7 @@ if args.daemon or os.environ.get('KIRO_DAEMON','false').lower() == 'true':
     service_main()
 else:
     nmapdata = main()
-    
-    if args.pretty:
-        # Print scan data
-        nmapjson = json.dumps(nmapdata,indent=2)
-    else:
-        nmapjson = json.dumps(nmapdata)
-    print(nmapjson)
+    print_json(nmapdata)
 
 if args.file:
     with open("netmon_" + current_date_time + ".txt", 'w') as fp:

@@ -34,4 +34,7 @@ def get_lowest_tls_version(ip, remote_host, port):
                 return "Invalid cert"
             else:
                 continue
+        # Ignore timeouts
+        except (TimeoutError):
+            continue
     return "Unsupported TLS"
