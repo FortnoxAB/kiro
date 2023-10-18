@@ -1,11 +1,14 @@
-import dns.resolver 
+import dns.resolver
+
 
 def is_dnssec_enabled(domain):
     try:
         # Create a DNS resolver
         resolver = dns.resolver.Resolver(configure=False)
-        #Make sure we use cloudflare as local DNS might not have DNSSEC support
-        resolver.nameservers = ['1.1.1.1'] 
+
+        # Make sure we use cloudflare as local DNS might not have DNSSEC support
+        resolver.nameservers = ['1.1.1.1']
+
         # Query the DS (Delegation Signer) records for the domain
         ds_records = resolver.query(domain, dns.rdatatype.DS)
 

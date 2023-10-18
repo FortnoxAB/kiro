@@ -1,9 +1,10 @@
 import socket
 import ssl
 
-def check_http(ip,domain,port):
-    httpget = "GET / HTTP/1.1\r\nHost: "+ domain + "\r\n\r\n"
-    
+
+def check_http(ip, domain, port):
+    httpget = "GET / HTTP/1.1\r\nHost: " + domain + "\r\n\r\n"
+
     try:
         # Try HTTP connection
         http_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -31,4 +32,4 @@ def check_http(ip,domain,port):
     except:
         pass
 
-    return "Neither" 
+    return "Neither"
