@@ -1,0 +1,14 @@
+cart
+disclaimer
+index
+home
+artists
+test
+error
+cart
+shoppingcart
+ajax
+AJAX
+privacy
+contact
+contactus

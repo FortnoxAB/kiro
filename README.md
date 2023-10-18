@@ -1,5 +1,6 @@
 # Kiro
-Scan your networks/domains to assess and improve your security posture.
+Scan your networks/domains to assess and improve your security posture.  
+Brute force directories and files for web facing ports (not available when run as a service).  
 
 ## Setup
 Make sure you have docker available or python setup with nmap from your packagedistributer
@@ -16,20 +17,21 @@ KIRO_INTERVAL, Add interval (in seconds) between runs when run as daemon.
 ## Usage
 
 ```
-usage: kiro.py [-h] [-D] [-H HOSTS] [-c] [-f] [-p] [-wl WORDLIST]
+usage: kiro.py [-h] [-D] [-H HOSTS] [-c] [-f] [-p] [-b] [-wl WORDLIST]
 
 Scan networks + domains to assess and improve security posture.
 
 options:
-  -h, --help            show this help message and exit
+  -h, --help            Show this help message and exit
   -D, --daemon          Run as service
   -H HOSTS, --hosts HOSTS
                         List of hosts separated by commas
   -c, --compare         Compare output to previous file
   -f, --file            Write json output to file
   -p, --pretty          Prettier output
+  -b, --brute           Brute force directories and files for web facing ports (cmd only)
   -wl WORDLIST, --wordlist WORDLIST
-                        Specify wordlist-file with subdomains
+                        Specify wordlist file with subdomains
 ```
 Examples:
 ```
