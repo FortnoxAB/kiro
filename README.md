@@ -17,7 +17,7 @@ KIRO_INTERVAL, Add interval (in seconds) between runs when run as daemon.
 ## Usage
 
 ```
-usage: kiro.py [-h] [-D] [-H HOSTS] [-c] [-f] [-p] [-b] [-wl WORDLIST]
+usage: kiro.py [-h] [-D] [-H HOSTS] [-c] [-f] [-p] [--brutedir] [--brutephp] [-wl WORDLIST]
 
 Scan networks + domains to assess and improve security posture.
 
