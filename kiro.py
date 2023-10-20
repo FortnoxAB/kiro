@@ -94,34 +94,46 @@ def print_json(nmap_object):
 
 
 def brute_force_directories(nmap_object):
+    brute_dir = args.brutedir
+    brute_php = args.brutephp
+
     for ip, item in nmap_object.items():
         if is_valid_ip(ip):
             host_name_to_use = ip
 
             try:
                 # Check if any valid hostnames exists, start with hostnames that include main domain.
-                for host_name in item["hostname"]:
+                for host_name in item['hostname']:
                     for target in targets:
                         if target in host_name:
                             host_name_to_use = host_name
 
-                for port in item["ports"]:
+                exclude_ports = ['80', '443']
+                accept_protocols = ['http', 'https']
+
+                for port in item['ports']:
                     if port['service'] and port['service']['name']:
                         try:
                             service_name = port['service']['name']
-                            if service_name == "https" or service_name == "http":
-                                port_number = ""
-                                if port["portid"] != "80" and port["portid"] != "443":
-                                    port_number = ":" + port["portid"]
-                                url = service_name + "://" + host_name_to_use + port_number
-                                brute_result = BruteForce.start(url, 3)
-                                port["brut"] = brute_result
+
+                            # For ports classified as http or https
+                            if service_name in accept_protocols:
+                                port_id = '' if port['portid'] in exclude_ports else ':' + port['portid']
+                                url = service_name + "://" + host_name_to_use + port_id
+
+                                brute_result = []
+                                if brute_dir:
+                                    brute_result += BruteForce.start(url, 5, "./bruteforce_dir_wordlist.txt")
+                                if brute_php:
+                                    brute_result += BruteForce.start(url, 5, "./bruteforce_php_wordlist.txt")
+
+                                port['brut'] = brute_result
                         except Exception as e:
-                            print("PORT exception: " + str(e))
-                            if port and not port["brut"]:
-                                port["brut"] = ["Test failed"]
+                            print('Brute Force - PORT exception: ' + str(e))
+                            if port and not port['brut']:
+                                port['brut'] = ['Test failed']
             except Exception as e:
-                print("outer exception: " + str(e))
+                print('Brute Force - exception: ' + str(e))
                 continue
 
 
@@ -170,10 +182,13 @@ parser.add_argument("-H", "--hosts", help="List of hosts separated by commas", t
 parser.add_argument("-c", "--compare", action='store_true', help='Compare output to previous file')
 parser.add_argument("-f", "--file", action='store_true', help='Write json output to file')
 parser.add_argument("-p", "--pretty", action='store_true', help='Prettier output')
-parser.add_argument("-b", "--brute",
-                    action='store_true',
-                    help='Brute force directories and files for web facing ports (cmd only)')
 parser.add_argument("-wl", "--wordlist", help='Specify wordlist file with subdomains', type=str)
+parser.add_argument("--brutedir",
+                    action='store_true',
+                    help='Brute force common directories and files for web facing ports (not available for service)')
+parser.add_argument("--brutephp",
+                    action='store_true',
+                    help='Brute force common php files for web facing ports (not available for service)')
 
 args = parser.parse_args()
 
@@ -197,7 +212,7 @@ else:
 if args.daemon or os.environ.get('KIRO_DAEMON', 'false').lower() == 'true':
     service_main()
 else:
-    brute = True if args.brute else False
+    brute = True if (args.brutedir or args.brutephp) else False
     nmap_result_single_run = main(brute)
     print_json(nmap_result_single_run)
 

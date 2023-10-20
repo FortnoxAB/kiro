@@ -29,9 +29,10 @@ options:
   -c, --compare         Compare output to previous file
   -f, --file            Write json output to file
   -p, --pretty          Prettier output
-  -b, --brute           Brute force directories and files for web facing ports (cmd only)
   -wl WORDLIST, --wordlist WORDLIST
                         Specify wordlist file with subdomains
+  --brutedir            Brute force common directories and files for web facing ports (not available for service)
+  --brutephp            Brute force common php files for web facing ports (not available for service)
 ```
 Examples:
 ```
