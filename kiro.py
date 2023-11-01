@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Any
 
 from util.portscan import *
 from util.compare import compare_files_as_json, compare_dicts
@@ -7,6 +7,7 @@ from util.domain_checks import run_domain_checks
 from util.port_checks import run_port_checks
 from util.domaintype import is_subdomain
 from util.is_valid_ip import is_valid_ip
+from util.directory_brute_force import BruteForce
 
 import json
 import time
@@ -34,6 +35,7 @@ def collect_targets(target_list):
                 for domain_item in dns_enum_result:
                     expanded_targets.append(domain_item['address'])
                     enum_domains.append(domain_item)
+
             # Target is a subdomain, resolve it and add it to targets - perhaps we should enum subdomains as well?
             else:
                 for ip in socket.gethostbyname_ex(target)[2]:
@@ -91,17 +93,61 @@ def print_json(nmap_object):
     print(json_object)
 
 
+def brute_force_directories(nmap_object):
+    brute_dir = args.brutedir
+    brute_php = args.brutephp
+
+    for ip, item in nmap_object.items():
+        if is_valid_ip(ip):
+            host_name_to_use = ip
+
+            try:
+                # Check if any valid hostnames exists, start with hostnames that include main domain.
+                for host_name in item['hostname']:
+                    for target in targets:
+                        if target in host_name:
+                            host_name_to_use = host_name
+
+                exclude_ports = ['80', '443']
+                accept_protocols = ['http', 'https']
+
+                for port in item['ports']:
+                    if port['service'] and port['service']['name']:
+                        try:
+                            service_name = port['service']['name']
+
+                            # For ports classified as http or https
+                            if service_name in accept_protocols:
+                                port_id = '' if port['portid'] in exclude_ports else ':' + port['portid']
+                                url = service_name + "://" + host_name_to_use + port_id
+
+                                brute_result = []
+                                if brute_dir:
+                                    brute_result += BruteForce.start(url, 5, "./bruteforce_dir_wordlist.txt")
+                                if brute_php:
+                                    brute_result += BruteForce.start(url, 5, "./bruteforce_php_wordlist.txt")
+
+                                port['brut'] = brute_result
+                        except Exception as e:
+                            print('Brute Force - PORT exception: ' + str(e))
+                            if port and not port['brut']:
+                                port['brut'] = ['Test failed']
+            except Exception as e:
+                print('Brute Force - exception: ' + str(e))
+                continue
+
+
 def service_main():
     nmap_result = dict[Any, Any]
     first_run = True
 
     while True:
         if first_run:
-            nmap_result = main()
+            nmap_result = main(False)
             print_json(nmap_result)
         else:
             previous_nmap_result = nmap_result
-            nmap_result = main()
+            nmap_result = main(False)
             compare_dicts(previous_nmap_result, nmap_result)
 
         # Sleep for a bit or we will hog CPUs
@@ -109,7 +155,7 @@ def service_main():
         first_run = False
 
 
-def main():
+def main(perform_brute: bool):
     # Collect target_ips
     target_ips, domains = collect_targets(targets)
 
@@ -122,6 +168,10 @@ def main():
     nmap_result = run_domain_checks(nmap_result, domains)
     nmap_result = run_port_checks(nmap_result, domains)
 
+    # Brute force directories and files
+    if perform_brute:
+        brute_force_directories(nmap_result)
+
     return nmap_result
 
 
@@ -132,7 +182,13 @@ parser.add_argument("-H", "--hosts", help="List of hosts separated by commas", t
 parser.add_argument("-c", "--compare", action='store_true', help='Compare output to previous file')
 parser.add_argument("-f", "--file", action='store_true', help='Write json output to file')
 parser.add_argument("-p", "--pretty", action='store_true', help='Prettier output')
-parser.add_argument("-wl", "--wordlist", help='Specify wordlist-file with subdomains', type=str)
+parser.add_argument("-wl", "--wordlist", help='Specify wordlist file with subdomains', type=str)
+parser.add_argument("--brutedir",
+                    action='store_true',
+                    help='Brute force common directories and files for web facing ports (not available for service)')
+parser.add_argument("--brutephp",
+                    action='store_true',
+                    help='Brute force common php files for web facing ports (not available for service)')
 
 args = parser.parse_args()
 
@@ -156,7 +212,8 @@ else:
 if args.daemon or os.environ.get('KIRO_DAEMON', 'false').lower() == 'true':
     service_main()
 else:
-    nmap_result_single_run = main()
+    brute = True if (args.brutedir or args.brutephp) else False
+    nmap_result_single_run = main(brute)
     print_json(nmap_result_single_run)
 
 

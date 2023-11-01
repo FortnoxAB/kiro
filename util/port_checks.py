@@ -11,10 +11,10 @@ def run_port_checks(nmap_object, domains):
                 # if there is TLS, make sure it only accept TLS1.2 or newer.
                 for domain in nmap_object[ip]['hostname']:
                     if port.get('service').get('tunnel') == 'ssl':
-                        mintls = get_lowest_tls_version(ip, domain, port['portid'])
-                        if mintls != 'TLSv1.2' and mintls != 'Unsupported TLS':
+                        min_tls = get_lowest_tls_version(ip, domain, port['portid'])
+                        if min_tls != 'TLSv1.2' and min_tls != 'Unsupported TLS':
                             nmap_object['flags'].append(
-                                {"port": port['portid'], "domain": domain, "ip": ip, "msg": mintls, "type": "port"})
+                                {"port": port['portid'], "domain": domain, "ip": ip, "msg": min_tls, "type": "port"})
 
                     # Run HTTP based checks if HTTP is present on port
                     proto = check_http(ip, domain, port['portid'])
