@@ -69,15 +69,21 @@ def compare_files_as_json():
 
 
 def compare_dicts(previous_result, current_result):
+    changes = {}
+
     for current_ip, current_values in current_result.items():
         if not is_valid_ip(current_ip):
             continue
-        if not current_ip in previous_result:
+
+        if current_ip not in previous_result:
+            changes.update({current_ip: {"state": "new"}})
             print("{}: IP not found earlier".format(current_ip))
 
         previous_values = previous_result.get(current_ip, {})
+
         # Check hostname
         print_diff(current_ip, "hostname", current_values, previous_values)
+
         # Loop through all ports and their keys and values
         for current_port in current_values.get("ports", []):
             c_port = PortObject(current_port)
@@ -87,6 +93,13 @@ def compare_dicts(previous_result, current_result):
 
             # Not found (no position) = new open port
             if position == -1:
+                if current_ip not in changes:
+                    changes.update({current_ip: {"state": "existing"}})
+
+                if "ports" not in changes.get(current_ip, {}):
+                    changes.update({current_ip: {"ports": list()}})
+
+                changes.get(current_ip, {}).get("ports", []).append({c_port.port_id: "added"})
                 print("{}: New port {} found open (Name:{}, Tunnel:{})".format(current_ip, c_port.port_id,
                                                                                c_port.service_name,
                                                                                c_port.service_tunnel))
@@ -105,7 +118,9 @@ def compare_dicts(previous_result, current_result):
     for previous_ip, previous_values in previous_result.items():
         if not is_valid_ip(previous_ip):
             continue
-        if not previous_ip in current_result:
+
+        if previous_ip not in current_result:
+            changes.update({previous_ip: {"state": "absent"}})
             previous_hostname = get_value_if_key_exists(previous_values, "hostname")
             print("{}: IP no longer exist (Hostname: {})".format(previous_ip, previous_hostname))
 
@@ -117,6 +132,10 @@ def compare_dicts(previous_result, current_result):
 
             # Find previous port has been removed
             if find_port_id_position(current_values.get("ports", []), port.port_id) == -1:
+                if "ports" not in changes.get(previous_ip, {}):
+                    changes.update({previous_ip: {"ports": list()}})
+
+                changes.get(previous_ip, {}).get("ports", []).append({port.port_id: "removed"})
                 print("{}: Old port {} not longer found open (Name:{}, Tunnel:{})".format(previous_ip, port.port_id,
                                                                                           port.service_name,
                                                                                           port.service_tunnel))
@@ -133,3 +152,6 @@ def compare_dicts(previous_result, current_result):
         for item in current_result['flags']:
             if item not in previous_result['flags']:
                 print('New flag found ' + str(item) + ' has been found')
+
+    json_object = json.dumps(changes, indent=2)
+    print(json_object)
