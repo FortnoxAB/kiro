@@ -85,12 +85,16 @@ def cleanup_nmap_object(nmap_object, domains):
     return nmap_object
 
 
-def print_json(nmap_object):
-    if args.pretty:
-        json_object = json.dumps(nmap_object, indent=2)
+def print_json(nmap_object, default_text_if_empty=None):
+    if nmap_object:
+        if args.pretty:
+            json_object = json.dumps(nmap_object, indent=2)
+        else:
+            json_object = json.dumps(nmap_object)
+        print(json_object)
     else:
-        json_object = json.dumps(nmap_object)
-    print(json_object)
+        if default_text_if_empty:
+            print(default_text_if_empty)
 
 
 def brute_force_directories(nmap_object):
@@ -144,11 +148,12 @@ def service_main():
     while True:
         if first_run:
             nmap_result = main(False)
-            print_json(nmap_result)
+            print_json(nmap_result, "First run empty, check your settings")
         else:
             previous_nmap_result = nmap_result
             nmap_result = main(False)
-            compare_dicts(previous_nmap_result, nmap_result)
+            changes = compare_dicts(previous_nmap_result, nmap_result)
+            print_json(changes, "No changes detected")
 
         # Sleep for a bit or we will hog CPUs
         time.sleep(os.environ.get('KIRO_INTERVAL', 30))
@@ -214,7 +219,7 @@ if args.daemon or os.environ.get('KIRO_DAEMON', 'false').lower() == 'true':
 else:
     brute = True if (args.brutedir or args.brutephp) else False
     nmap_result_single_run = main(brute)
-    print_json(nmap_result_single_run)
+    print_json(nmap_result_single_run, "Single CLI is empty")
 
 
 if args.file:

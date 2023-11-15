@@ -68,7 +68,7 @@ def compare_files_as_json():
     compare_dicts(previous_result, current_result)
 
 
-def compare_dicts(previous_result, current_result):
+def compare_dicts(previous_result, current_result) -> dict:
     changes = {}
 
     for current_ip, current_values in current_result.items():
@@ -153,5 +153,4 @@ def compare_dicts(previous_result, current_result):
             if item not in previous_result['flags']:
                 print('New flag found ' + str(item) + ' has been found')
 
-    json_object = json.dumps(changes, indent=2)
-    print(json_object)
+    return changes
