@@ -8,9 +8,7 @@ def portscan(targets):
     result = {}
     try:
         nmap = nmap3.NmapHostDiscovery()
-        # Use quick scan for testing! Since time is money
-        # nmap_result = nmap.scan_top_ports(' , '.join(targets), args="-sV --open")
-        nmap_result = nmap.nmap_portscan_only(' , '.join(targets), args="-sV --open")
+        nmap_result = nmap.nmap_portscan_only(' , '.join(targets), args="-sV --open --script vulners --script-args mincvss=5.0")
         result.update(nmap_result)
     except KeyboardInterrupt:
         print("You pressed Ctrl+C")

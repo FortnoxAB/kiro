@@ -75,7 +75,6 @@ def cleanup_nmap_object(nmap_object, domains):
                 port.pop('reason')
                 port.pop('reason_ttl')
                 port.pop('cpe')
-                port.pop('scripts')
                 port['service'].pop('method')
                 port['service'].pop('conf')
                 try:
