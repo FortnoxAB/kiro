@@ -11,6 +11,7 @@ from util.directory_brute_force import BruteForce
 
 import json
 import time
+import datetime
 import argparse
 import socket
 import os
@@ -45,6 +46,18 @@ def collect_targets(target_list):
     # Remove duplicate IPs from list.
     [deduplicated_list.append(item) for item in expanded_targets if item not in deduplicated_list]
     return deduplicated_list, enum_domains
+
+
+def nmap_summary(nmap_object, start, finished):
+    # Get metadata of nmap scan
+    runtime = nmap_object.get("runtime", {})
+    return {
+        "start": str(start),
+        "finished": str(finished),
+        "summary": runtime.get("summary"),
+        "elapsed": runtime.get("elapsed"),
+        "exit": runtime.get("exit")
+    }
 
 
 def cleanup_nmap_object(nmap_object, domains):
@@ -82,6 +95,50 @@ def cleanup_nmap_object(nmap_object, domains):
                 except:
                     continue
     return nmap_object
+
+
+def cleanup_scripts_object(nmap_object):
+    # Loop over keys (IPs) in nmap-result
+    for key in nmap_object.keys():
+        if is_valid_ip(key):
+            # For every port remove the scripts property
+            for port in nmap_object[key]['ports']:
+                port.pop('scripts')
+    return nmap_object
+
+
+def extract_vulnerabilities(nmap_object) -> list:
+    vulnerabilities = []
+
+    # Loop through IPs and their nmap results
+    for current_ip, current_values in nmap_object.items():
+        if not is_valid_ip(current_ip):
+            continue
+
+        current_hostname = current_values.get("hostname")
+
+        # Loop through all ports and their keys and values
+        for current_port in current_values.get("ports", []):
+            portid = current_port.get("portid")
+            scripts = current_port.get("scripts")
+
+            # If a scripts property is present extract information
+            # wanted and add to the vulnerability list.
+            if scripts:
+                item_vulnerabilities = []
+                for item in scripts:
+                    item.pop("raw")
+                    item_vulnerabilities.append(item)
+
+                findings = {
+                    "hostname": current_hostname,
+                    "ip": current_ip,
+                    "port": portid,
+                    "items": item_vulnerabilities
+                }
+                vulnerabilities.append(findings)
+
+    return vulnerabilities
 
 
 def print_json(nmap_object, default_text_if_empty=None):
@@ -151,8 +208,8 @@ def service_main():
         else:
             previous_nmap_result = nmap_result
             nmap_result = main(False)
-            changes = compare_dicts(previous_nmap_result, nmap_result)
-            print_json(changes, "No changes detected")
+            compare_result = compare_dicts(previous_nmap_result, nmap_result)
+            print_json(compare_result, )
 
         # Sleep for a bit or we will hog CPUs
         time.sleep(os.environ.get('KIRO_INTERVAL', 30))
@@ -160,21 +217,42 @@ def service_main():
 
 
 def main(perform_brute: bool):
+    start_datetime = datetime.datetime.now()
+
     # Collect target_ips
     target_ips, domains = collect_targets(targets)
 
     # Run nmap portscan
     nmap_result: dict[Any, Any] = portscan(target_ips)
 
+    finished_datetime = datetime.datetime.now()
+
+    # Collect scan summary: start, finished, summary and elapsed time
+    summary = nmap_summary(nmap_result, start_datetime, finished_datetime)
+
     # Remove unwanted nmap data from object
     nmap_result = cleanup_nmap_object(nmap_result, domains)
+
     nmap_result['flags'] = []
     nmap_result = run_domain_checks(nmap_result, domains)
     nmap_result = run_port_checks(nmap_result, domains)
 
+    # Get found vulnerabilities to flags property list
+    vulnerabilities = extract_vulnerabilities(nmap_result)
+    if vulnerabilities:
+        for vulnerability in vulnerabilities:
+            nmap_result['flags'].append(vulnerability)
+
+    nmap_result = cleanup_scripts_object(nmap_result)
+
     # Brute force directories and files
     if perform_brute:
         brute_force_directories(nmap_result)
+
+    # When performing large scans over multiple domains the importance
+    # of logging the actual scan summary's metadata seams reasonable.
+    print_json("")
+    print_json(summary)
 
     return nmap_result
 
