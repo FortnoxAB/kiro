@@ -137,15 +137,24 @@ def get_vulnerabilities(nmap_object) -> list:
                 """ If a scripts property is present extract information
                     wanted and add to the vulnerability list. """
                 if scripts:
+                    script_items = []
                     for item in scripts:
                         item.pop("raw")
-                        item_vulnerabilities.append(item)
+                        script_items.append(item)
+
+                    item_vulnerabilities.append({
+                        "nmap_vulners": script_items
+                    })
 
                 """ Add any security header finding for each port """
                 if security_headers:
+                    security_headers_items = []
                     for item in security_headers:
-                        item_vulnerabilities.append(item)
+                        security_headers_items.append(item)
 
+                    item_vulnerabilities.append({
+                        "security_headers": security_headers_items
+                    })
                 findings["items"] = item_vulnerabilities
 
                 vulnerabilities.append(findings)

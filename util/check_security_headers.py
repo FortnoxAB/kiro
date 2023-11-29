@@ -246,16 +246,19 @@ class SecurityHeaders:
 
         for header, value in result.items():
             if value['warn']:
-                finding = {
-                    "name": header,
-                    "info": "",
-                    "notes": []
-                }
+                notes = []
+
                 if not value['defined']:
-                    finding["info"] = "missing"
+                    message = "missing"
                 else:
-                    finding["info"] = value['contents']
-                    finding["notes"] = value['notes']
+                    message = value['contents']
+                    notes = value['notes']
+
+                finding = {
+                    header: message
+                }
+                if notes:
+                    finding.update({"notes": notes})
 
                 findings.append(finding)
 

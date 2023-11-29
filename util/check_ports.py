@@ -9,7 +9,7 @@ def run_port_checks(nmap_object):
     for ip, item in nmap_object.items():
         if is_valid_ip(ip):
             for port in nmap_object[ip]['ports']:
-                # if there is TLS, make sure it only accept TLS1.2 or newer.
+                # If there is TLS, make sure it only accept TLS1.2 or newer.
                 for domain in nmap_object[ip]['hostname']:
                     if port.get('service').get('tunnel') == 'ssl':
                         min_tls = get_lowest_tls_version(ip, domain, port['portid'])
@@ -23,7 +23,7 @@ def run_port_checks(nmap_object):
                         # Get http response headers
                         httpheaders, http_status_code = get_all_http_headers(ip, domain, port['portid'], proto)
 
-                        # Test headers
+                        # Check headers, add to output if vulnerabilities are found
                         security_headers = SecurityHeaders.analyze(httpheaders)
                         if security_headers:
                             port.update({"security_headers": security_headers})
