@@ -1,10 +1,11 @@
 from util.ports.get_min_tls import get_lowest_tls_version
 from util.ports.check_if_http import check_http
-from util.ports.get_http_header import get_http_header, get_all_http_headers
+from util.ports.get_http_header import get_all_http_headers
 from util.is_valid_ip import is_valid_ip
+from util.check_security_headers import SecurityHeaders
 
 
-def run_port_checks(nmap_object, domains):
+def run_port_checks(nmap_object):
     for ip, item in nmap_object.items():
         if is_valid_ip(ip):
             for port in nmap_object[ip]['ports']:
@@ -21,7 +22,10 @@ def run_port_checks(nmap_object, domains):
                     if proto != 'Neither':
                         # Get http response headers
                         httpheaders, http_status_code = get_all_http_headers(ip, domain, port['portid'], proto)
-                        # Check for CSP among the response headers.
-                        # if type(httpheaders) == dict and httpheaders != {} and 'Content-Security-Policy' not in httpheaders:
-                        #    nmapdata['flags'].append({"port": port['portid'],"domain": domain, "ip": ip, "msg": "No Content-Security-Policy present","type":"port"})
+
+                        # Test headers
+                        security_headers = SecurityHeaders.analyze(httpheaders)
+                        if security_headers:
+                            port.update({"security_headers": security_headers})
+
     return nmap_object
