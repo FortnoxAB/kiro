@@ -1,3 +1,5 @@
+# Rewrite of GitHub repository https://github.com/juerkkil/securityheaders
+# to fit the needs of Kiro structure
 import re
 from typing import Tuple
 
