@@ -111,14 +111,14 @@ def cleanup_object(nmap_object):
 def get_vulnerabilities(nmap_object) -> list:
     vulnerabilities = []
 
-    """ Loop through IPs and their nmap results """
+    # Loop through IPs and their nmap results
     for current_ip, current_values in nmap_object.items():
         if not is_valid_ip(current_ip):
             continue
 
         current_hostname = current_values.get("hostname")
 
-        """ Loop through all ports and their keys and values """
+        # Loop through all ports and their keys and values
         for current_port in current_values.get("ports", []):
             portid = current_port.get("portid")
             scripts = current_port.get("scripts")
@@ -134,8 +134,7 @@ def get_vulnerabilities(nmap_object) -> list:
                     "items": []
                 }
 
-                """ If a scripts property is present extract information
-                    wanted and add to the vulnerability list. """
+                # If a scripts property is present extract information wanted and add to the vulnerability list
                 if scripts:
                     script_items = []
                     for item in scripts:
@@ -146,7 +145,7 @@ def get_vulnerabilities(nmap_object) -> list:
                         "nmap_vulners": script_items
                     })
 
-                """ Add any security header finding for each port """
+                # Add any security header finding for each port
                 if security_headers:
                     security_headers_items = []
                     for item in security_headers:
@@ -240,25 +239,25 @@ def service_main():
 def main(perform_brute: bool):
     start_datetime = datetime.datetime.now()
 
-    """ Collect target_ips """
+    # Collect target_ips
     target_ips, domains = collect_targets(targets)
 
-    """ Run nmap portscan """
+    # Run nmap portscan
     nmap_result: dict[Any, Any] = portscan(target_ips)
 
     finished_datetime = datetime.datetime.now()
 
-    """ Collect scan summary: start, finished, summary and elapsed time """
+    # Collect scan summary: start, finished, summary and elapsed time
     summary = nmap_summary(nmap_result, start_datetime, finished_datetime)
 
-    """ Remove unwanted nmap data from object """
+    # Remove unwanted nmap data from object
     nmap_result = cleanup_nmap_object(nmap_result, domains)
 
     nmap_result['flags'] = []
     nmap_result = run_domain_checks(nmap_result, domains)
     nmap_result = run_port_checks(nmap_result)
 
-    """ Get found vulnerabilities to flags property list """
+    # Get found vulnerabilities to flags property list
     vulnerabilities = get_vulnerabilities(nmap_result)
     if vulnerabilities:
         for vulnerability in vulnerabilities:
@@ -266,12 +265,12 @@ def main(perform_brute: bool):
 
     nmap_result = cleanup_object(nmap_result)
 
-    """ Brute force directories and files """
+    # Brute force directories and files
     if perform_brute:
         brute_force_directories(nmap_result)
 
-    """ When performing large scans over multiple domains the importance
-        of logging the actual scan summary's metadata seams reasonable."""
+    # When performing large scans over multiple domains the importance
+    # of logging the actual scan summary's metadata seams reasonable
     print_json("")
     print_json(summary)
 

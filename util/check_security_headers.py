@@ -223,13 +223,12 @@ class SecurityHeaders:
     ]
 
     def __analyze(self):
-        """ Default return array """
         retval = {}
 
         if not self.headers:
             raise SecurityHeadersException("Headers not found")
 
-        """ Loop through headers and evaluate the risk """
+        # Loop through headers and evaluate the risk
         for header in self.SECURITY_HEADERS_DICT:
             if header in self.headers:
                 eval_func = self.SECURITY_HEADERS_DICT[header].get('eval_func')
