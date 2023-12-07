@@ -3,6 +3,13 @@ import ssl
 
 
 def check_http(ip, domain, port):
+    """
+    Check GET request protocol. Possible values are
+    (1) HTTP
+    (2) HTTPS
+    (3) None
+    """
+
     httpget = "GET / HTTP/1.1\r\nHost: " + domain + "\r\n\r\n"
 
     try:
@@ -32,4 +39,4 @@ def check_http(ip, domain, port):
     except:
         pass
 
-    return "Neither"
+    return None

@@ -17,7 +17,9 @@ import socket
 import os
 
 
-def collect_targets(target_list):
+def collect_target_ip_addresses(target_list):
+    """ Collect target ip addresses, including for all found subdomains """
+
     expanded_targets = []
     deduplicated_list = []
     enum_domains = []
@@ -48,12 +50,13 @@ def collect_targets(target_list):
     return deduplicated_list, enum_domains
 
 
-def nmap_summary(nmap_object, start, finished):
-    # Get metadata of nmap scan
+def nmap_scan_summary(nmap_object, start):
+    """ Collect scan summary: start, finished, summary and elapsed time """
+
     runtime = nmap_object.get("runtime", {})
     return {
         "start": str(start),
-        "finished": str(finished),
+        "finished": str(datetime.datetime.now()),
         "summary": runtime.get("summary"),
         "elapsed": runtime.get("elapsed"),
         "exit": runtime.get("exit")
@@ -61,17 +64,22 @@ def nmap_summary(nmap_object, start, finished):
 
 
 def cleanup_nmap_object(nmap_object, domains):
-    # Remove junk nmap keys
-    nmap_object.pop('runtime')
-    nmap_object.pop('stats')
-    nmap_object.pop('task_results')
+    """ Remove unwanted nmap data from object for readability """
 
-    # Loop over keys (IPs) in nmap-result
+    if 'runtime' in nmap_object:
+        nmap_object.pop('runtime')
+    if 'stats' in nmap_object:
+        nmap_object.pop('stats')
+    if 'task_results' in nmap_object:
+        nmap_object.pop('task_results')
+
     for key in nmap_object.keys():
-        # Remove junk nmap keys
-        nmap_object[key].pop('osmatch')
-        nmap_object[key].pop('state')
-        nmap_object[key].pop('macaddress')
+        if 'osmatch' in nmap_object[key]:
+            nmap_object[key].pop('osmatch')
+        if 'state' in nmap_object[key]:
+            nmap_object[key].pop('state')
+        if 'macaddress' in nmap_object[key]:
+            nmap_object[key].pop('macaddress')
 
         if is_valid_ip(key):
             # Flatten nmap reverse-lookups
@@ -84,47 +92,63 @@ def cleanup_nmap_object(nmap_object, domains):
                         nmap_object[key]['hostname'].append(domain_item['hostname'])
 
             for port in nmap_object[key]['ports']:
-                port.pop('state')
-                port.pop('reason')
-                port.pop('reason_ttl')
-                port.pop('cpe')
-                port['service'].pop('method')
-                port['service'].pop('conf')
+                if 'state' in port:
+                    port.pop('state')
+                if 'reason' in port:
+                    port.pop('reason')
+                if 'reason_ttl' in port:
+                    port.pop('reason_ttl')
+                if 'cpe' in port:
+                    port.pop('cpe')
+                if 'method' in port['service']:
+                    port['service'].pop('method')
+                if 'conf' in port['service']:
+                    port['service'].pop('conf')
                 try:
-                    port['service'].pop('servicefp')
+                    if 'servicefp' in port['service']:
+                        port['service'].pop('servicefp')
                 except:
                     continue
     return nmap_object
 
 
 def cleanup_object(nmap_object):
-    # Loop over keys (IPs) in nmap-result
+    """ Remove additional nmap data that might exist in the general "flags" section """
+
     for key in nmap_object.keys():
         if is_valid_ip(key):
-            # For every port remove the scripts property
             for port in nmap_object[key]['ports']:
-                port.pop('scripts')
-                port.pop('security_headers')
+                if 'scripts' in port:
+                    port.pop('scripts')
+                if 'security_headers' in port:
+                    port.pop('security_headers')
+                if 'cookie_flags' in port:
+                    port.pop('cookie_flags')
     return nmap_object
 
 
 def get_vulnerabilities(nmap_object) -> list:
+    """
+    For each vulnerability registered in nmap data object,
+    summarize the information wanted and group over
+    IP address and port.
+    """
+
     vulnerabilities = []
 
-    # Loop through IPs and their nmap results
     for current_ip, current_values in nmap_object.items():
         if not is_valid_ip(current_ip):
             continue
 
         current_hostname = current_values.get("hostname")
 
-        # Loop through all ports and their keys and values
         for current_port in current_values.get("ports", []):
             portid = current_port.get("portid")
             scripts = current_port.get("scripts")
             security_headers = current_port.get("security_headers")
+            cookie_flags = current_port.get("cookie_flags")
 
-            if scripts or security_headers:
+            if scripts or security_headers or cookie_flags:
                 item_vulnerabilities = []
 
                 findings = {
@@ -134,28 +158,36 @@ def get_vulnerabilities(nmap_object) -> list:
                     "items": []
                 }
 
-                # If a scripts property is present extract information wanted and add to the vulnerability list
                 if scripts:
                     script_items = []
                     for item in scripts:
-                        item.pop("raw")
+                        if 'raw' in item:
+                            item.pop("raw")
                         script_items.append(item)
 
                     item_vulnerabilities.append({
                         "nmap_vulners": script_items
                     })
 
-                # Add any security header finding for each port
                 if security_headers:
-                    security_headers_items = []
+                    security_header_items = []
                     for item in security_headers:
-                        security_headers_items.append(item)
+                        security_header_items.append(item)
 
                     item_vulnerabilities.append({
-                        "security_headers": security_headers_items
+                        "security_headers": security_header_items
                     })
-                findings["items"] = item_vulnerabilities
 
+                if cookie_flags:
+                    cookie_flag_items = []
+                    for item in cookie_flags:
+                        cookie_flag_items.append(item)
+
+                    item_vulnerabilities.append({
+                        "cookie_flags": cookie_flag_items
+                    })
+
+                findings["items"] = item_vulnerabilities
                 vulnerabilities.append(findings)
 
     return vulnerabilities
@@ -174,6 +206,8 @@ def print_json(nmap_object, default_text_if_empty=None):
 
 
 def brute_force_directories(nmap_object):
+    """ Brute force directories and files (not available for service) """
+
     brute_dir = args.brutedir
     brute_php = args.brutephp
 
@@ -196,7 +230,6 @@ def brute_force_directories(nmap_object):
                         try:
                             service_name = port['service']['name']
 
-                            # For ports classified as http or https
                             if service_name in accept_protocols:
                                 port_id = '' if port['portid'] in exclude_ports else ':' + port['portid']
                                 url = service_name + "://" + host_name_to_use + port_id
@@ -239,25 +272,18 @@ def service_main():
 def main(perform_brute: bool):
     start_datetime = datetime.datetime.now()
 
-    # Collect target_ips
-    target_ips, domains = collect_targets(targets)
-
-    # Run nmap portscan
+    # Get IP addresses, scan, summarize and cleanup
+    target_ips, domains = collect_target_ip_addresses(targets)
     nmap_result: dict[Any, Any] = portscan(target_ips)
-
-    finished_datetime = datetime.datetime.now()
-
-    # Collect scan summary: start, finished, summary and elapsed time
-    summary = nmap_summary(nmap_result, start_datetime, finished_datetime)
-
-    # Remove unwanted nmap data from object
+    summary = nmap_scan_summary(nmap_result, start_datetime)
     nmap_result = cleanup_nmap_object(nmap_result, domains)
 
+    # Analyze vulnerability results and add to general "flags" section.
+    # Vulnerabilities are group over IP address and port.
     nmap_result['flags'] = []
     nmap_result = run_domain_checks(nmap_result, domains)
     nmap_result = run_port_checks(nmap_result)
 
-    # Get found vulnerabilities to flags property list
     vulnerabilities = get_vulnerabilities(nmap_result)
     if vulnerabilities:
         for vulnerability in vulnerabilities:
@@ -265,7 +291,6 @@ def main(perform_brute: bool):
 
     nmap_result = cleanup_object(nmap_result)
 
-    # Brute force directories and files
     if perform_brute:
         brute_force_directories(nmap_result)
 

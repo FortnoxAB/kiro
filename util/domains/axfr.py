@@ -19,7 +19,8 @@ def get_nameservers(domain_name):
 
 
 def is_domain_available_for_axfr(domain_name):
-    # print(domain_name)
+    """ Check if domain transfer is available for domain """
+
     try:
         # Get the nameservers for the domain
         nameservers = get_nameservers(domain_name)
