@@ -3,8 +3,8 @@ from typing import Any
 from util.portscan import *
 from util.compare import compare_files_as_json, compare_dicts
 from util.dns_enum import dns_enum
-from util.domain_checks import run_domain_checks
-from util.port_checks import run_port_checks
+from util.check_domain import run_domain_checks
+from util.check_ports import run_port_checks
 from util.domaintype import is_subdomain
 from util.is_valid_ip import is_valid_ip
 from util.directory_brute_force import BruteForce
@@ -97,17 +97,18 @@ def cleanup_nmap_object(nmap_object, domains):
     return nmap_object
 
 
-def cleanup_scripts_object(nmap_object):
+def cleanup_object(nmap_object):
     # Loop over keys (IPs) in nmap-result
     for key in nmap_object.keys():
         if is_valid_ip(key):
             # For every port remove the scripts property
             for port in nmap_object[key]['ports']:
                 port.pop('scripts')
+                port.pop('security_headers')
     return nmap_object
 
 
-def extract_vulnerabilities(nmap_object) -> list:
+def get_vulnerabilities(nmap_object) -> list:
     vulnerabilities = []
 
     # Loop through IPs and their nmap results
@@ -121,21 +122,40 @@ def extract_vulnerabilities(nmap_object) -> list:
         for current_port in current_values.get("ports", []):
             portid = current_port.get("portid")
             scripts = current_port.get("scripts")
+            security_headers = current_port.get("security_headers")
 
-            # If a scripts property is present extract information
-            # wanted and add to the vulnerability list.
-            if scripts:
+            if scripts or security_headers:
                 item_vulnerabilities = []
-                for item in scripts:
-                    item.pop("raw")
-                    item_vulnerabilities.append(item)
 
                 findings = {
                     "hostname": current_hostname,
                     "ip": current_ip,
                     "port": portid,
-                    "items": item_vulnerabilities
+                    "items": []
                 }
+
+                # If a scripts property is present extract information wanted and add to the vulnerability list
+                if scripts:
+                    script_items = []
+                    for item in scripts:
+                        item.pop("raw")
+                        script_items.append(item)
+
+                    item_vulnerabilities.append({
+                        "nmap_vulners": script_items
+                    })
+
+                # Add any security header finding for each port
+                if security_headers:
+                    security_headers_items = []
+                    for item in security_headers:
+                        security_headers_items.append(item)
+
+                    item_vulnerabilities.append({
+                        "security_headers": security_headers_items
+                    })
+                findings["items"] = item_vulnerabilities
+
                 vulnerabilities.append(findings)
 
     return vulnerabilities
@@ -235,22 +255,22 @@ def main(perform_brute: bool):
 
     nmap_result['flags'] = []
     nmap_result = run_domain_checks(nmap_result, domains)
-    nmap_result = run_port_checks(nmap_result, domains)
+    nmap_result = run_port_checks(nmap_result)
 
     # Get found vulnerabilities to flags property list
-    vulnerabilities = extract_vulnerabilities(nmap_result)
+    vulnerabilities = get_vulnerabilities(nmap_result)
     if vulnerabilities:
         for vulnerability in vulnerabilities:
             nmap_result['flags'].append(vulnerability)
 
-    nmap_result = cleanup_scripts_object(nmap_result)
+    nmap_result = cleanup_object(nmap_result)
 
     # Brute force directories and files
     if perform_brute:
         brute_force_directories(nmap_result)
 
     # When performing large scans over multiple domains the importance
-    # of logging the actual scan summary's metadata seams reasonable.
+    # of logging the actual scan summary's metadata seams reasonable
     print_json("")
     print_json(summary)
 
