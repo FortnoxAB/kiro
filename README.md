@@ -3,7 +3,7 @@ Scan your networks/domains to assess and improve your security posture.
 Brute force directories and files for web facing ports (not available when run as a service).  
 
 ## Setup
-Make sure you have docker available or python setup with nmap from your packagedistributer
+Make sure you have docker available or python setup with nmap from your package distributer
 
 ```
 pip3 install -r requirements.txt
@@ -116,12 +116,15 @@ $ python3 kiro.py -p -H 127.0.0.1
               "notes": ["Unsafe source 'unsafe-inline' in directive script-src"]
             },{
               "x-frame-options": "missing"
-            },{ 
-              "x-xss-protection": "1"
-            },{
-              "permissions-policy": "missing"
             },{
               "server": "simplehttp/0.6 python/3.10.12"
+          }]
+        },
+        {
+          "cookie_flags": [{
+              "cookie_1": "Missing Secure"
+            },{
+              "cookie_3": "Missing HttpOnly"
           }]
         }
       ]
