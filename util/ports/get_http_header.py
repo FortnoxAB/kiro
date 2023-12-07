@@ -28,7 +28,6 @@ def get_all_http_headers(ip, host_header, port, proto):
 
     try:
         response = requests.get(url, headers=headers, allow_redirects=False, verify=False)
-
-        return response.headers, response.status_code
+        return response.headers, response.cookies.get_dict(), response.status_code
     except requests.exceptions.RequestException as e:
         return False, f"An error occurred: {e}"
