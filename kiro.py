@@ -161,6 +161,9 @@ def get_vulnerabilities(nmap_object) -> list:
                 if scripts:
                     script_items = []
                     for item in scripts:
+                        if "name" in item:
+                            if item['name'] == "fingerprint-strings":
+                                continue
                         if 'raw' in item:
                             item.pop("raw")
                         script_items.append(item)

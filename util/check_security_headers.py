@@ -67,10 +67,12 @@ def eval_sts(contents: str) -> Tuple[int, list]:
 
 def eval_csp(contents: str) -> Tuple[int, list]:
     unsafe_rules = {
-        "script-src": ["*", "'unsafe-eval'", "data:", "'unsafe-inline'"],
-        "frame-ancestors": ["*"],
-        "form-action": ["*"],
-        "object-src": ["*"],
+        "default-src": ["*","http:","https:","https:*","http:*", "'unsafe-eval'", "data:", "'unsafe-inline'"],
+        "script-src": ["*","http:","https:","https:*","http:*", "'unsafe-eval'", "data:", "'unsafe-inline'"],
+        "frame-ancestors": ["*","http:","https:","https:*","http:*"],
+        "form-action": ["*","http:","https:","https:*","http:*"],
+        "object-src": ["*","http:","https:","https:*","http:*"],
+        "connect-src": ["*","http:","https:","https:*","http:*"]
     }
 
     # There are no universal rules for "safe" and "unsafe" CSP directives, but we apply some common sense here to
