@@ -214,6 +214,7 @@ def print_json(nmap_object, default_text_if_empty=None):
             json_object = json.dumps(nmap_object, indent=2)
         else:
             json_object = json.dumps(nmap_object)
+            json_object = " ".join(json_object.splitlines())
         print(json_object)
     else:
         if default_text_if_empty:
