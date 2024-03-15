@@ -56,13 +56,17 @@ class CookieFlags:
     @staticmethod
     def analyze(headers, cookies) -> list:
         findings = []
-        cookie_flags = CookieFlags(headers, cookies)
-        result = cookie_flags.__analyze()
 
-        if not result:
-            return findings
+        try:
+            cookie_flags = CookieFlags(headers, cookies)
+            result = cookie_flags.__analyze()
 
-        for key, val in result.items():
-            findings.append({key: val})
+            if not result:
+                return findings
+
+            for key, val in result.items():
+                findings.append({key: val})
+        except Exception as e:
+            print("Analyze Cookies exception: " + str(e))
 
         return findings

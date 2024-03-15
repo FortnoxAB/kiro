@@ -124,6 +124,8 @@ def cleanup_object(nmap_object):
                     port.pop('security_headers')
                 if 'cookie_flags' in port:
                     port.pop('cookie_flags')
+                if 'cors' in port:
+                    port.pop('cors')
     return nmap_object
 
 
@@ -147,8 +149,9 @@ def get_vulnerabilities(nmap_object) -> list:
             scripts = current_port.get("scripts")
             security_headers = current_port.get("security_headers")
             cookie_flags = current_port.get("cookie_flags")
+            cors = current_port.get("cors")
 
-            if scripts or security_headers or cookie_flags:
+            if scripts or security_headers or cookie_flags or cors:
                 item_vulnerabilities = []
 
                 findings = {
@@ -188,6 +191,15 @@ def get_vulnerabilities(nmap_object) -> list:
 
                     item_vulnerabilities.append({
                         "cookie_flags": cookie_flag_items
+                    })
+
+                if cors:
+                    cors_items = []
+                    for item in cors:
+                        cors_items.append(item)
+
+                    item_vulnerabilities.append({
+                        "cors": cors_items
                     })
 
                 findings["items"] = item_vulnerabilities

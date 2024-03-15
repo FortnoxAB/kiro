@@ -1,9 +1,25 @@
 # Kiro
 Scan your networks/domains to assess and improve your security posture.  
-Brute force directories and files for web facing ports (not available when run as a service).  
+Features implemented are:
+* Subdomain brute force
+* Nmap with script vulners
+* Security headers and cookie flags
+* CORS misconfiguration
+* Brute force directories and files for web facing ports (not available when run as a service).
+
+## Reports:
+* Subdomains
+* Open ports and protocol
+* TLS version < 1.2
+* DNS Zone Transfer is possible
+* DNSSEC is not enabled
+* Vulnerabilities from nmap vulners
+* Missing or vulnerable security headers
+* Missing cookie flags
+* CORS misconfigurations
 
 ## Setup
-Make sure you have docker available or python setup with nmap from your package distributer
+Make sure you have docker available or python setup with nmap from your package manager.
 
 ```
 pip3 install -r requirements.txt
@@ -126,6 +142,11 @@ $ python3 kiro.py -p -H 127.0.0.1
             },{
               "cookie_3": "Missing HttpOnly"
           }]
+        },
+        {
+          "cors": [{
+              "misconficuration 1": "descriptive text"
+            }]
         }
       ]
     }
