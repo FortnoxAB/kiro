@@ -50,6 +50,10 @@ class CookieFlags:
         return retval
 
     def __init__(self, headers, cookies):
+        if not headers:
+            headers = {}
+        if not cookies:
+            cookies = {}
         self.headers = {key.lower(): val.lower() for key, val in headers.items()}
         self.cookies = {key.lower(): val for key, val in cookies.items()}
 

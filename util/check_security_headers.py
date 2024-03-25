@@ -266,9 +266,13 @@ class SecurityHeaders:
     @staticmethod
     def analyze(headers) -> list:
         findings = []
+
         try:
-            sh = SecurityHeaders(headers)
-            result = sh.__analyze()
+            result = None
+
+            if headers:
+                sh = SecurityHeaders(headers)
+                result = sh.__analyze()
 
             if not result:
                 return findings

@@ -7,7 +7,7 @@ from util.check_cookie_flags import CookieFlags
 from util.check_cors import Cors
 
 
-def run_port_checks(nmap_object):
+def run_port_checks(nmap_object, verbose=False):
     """
     Perform mandatory checks / validations for each port.
     Checks implemented are
@@ -19,6 +19,9 @@ def run_port_checks(nmap_object):
 
     for ip, item in nmap_object.items():
         if is_valid_ip(ip):
+            if verbose:
+                print(f"Port Checks for ip {ip}")
+
             for port in nmap_object[ip]['ports']:
                 for domain in nmap_object[ip]['hostname']:
                     http_protocol = port.get('service').get('name')
@@ -32,17 +35,23 @@ def run_port_checks(nmap_object):
 
                     # Run HTTP based checks if HTTP is present on port
                     proto = check_http(ip, domain, port_id)
+
+                    if verbose:
+                        print(f"-- {domain}: {port_id}")
+
                     if proto:
-                        http_headers, http_cookies, http_status_code = (
+                        http_headers, http_cookies = (
                             get_all_http_headers(ip, domain, port_id, http_protocol))
 
-                        security_headers = SecurityHeaders.analyze(http_headers)
-                        if security_headers:
-                            port.update({"security_headers": security_headers})
+                        if http_headers:
+                            security_headers = SecurityHeaders.analyze(http_headers)
+                            if security_headers:
+                                port.update({"security_headers": security_headers})
 
-                        cookie_flags = CookieFlags.analyze(http_headers, http_cookies)
-                        if cookie_flags:
-                            port.update({"cookie_flags": cookie_flags})
+                        if http_cookies or http_headers:
+                            cookie_flags = CookieFlags.analyze(http_headers, http_cookies)
+                            if cookie_flags:
+                                port.update({"cookie_flags": cookie_flags})
 
                         cors = Cors.analyze(domain, port_id, http_protocol)
                         if cors:
