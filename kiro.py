@@ -124,6 +124,8 @@ def cleanup_object(nmap_object):
                     port.pop('security_headers')
                 if 'cookie_flags' in port:
                     port.pop('cookie_flags')
+                if 'cors' in port:
+                    port.pop('cors')
     return nmap_object
 
 
@@ -147,8 +149,9 @@ def get_vulnerabilities(nmap_object) -> list:
             scripts = current_port.get("scripts")
             security_headers = current_port.get("security_headers")
             cookie_flags = current_port.get("cookie_flags")
+            cors = current_port.get("cors")
 
-            if scripts or security_headers or cookie_flags:
+            if scripts or security_headers or cookie_flags or cors:
                 item_vulnerabilities = []
 
                 findings = {
@@ -190,6 +193,15 @@ def get_vulnerabilities(nmap_object) -> list:
                         "cookie_flags": cookie_flag_items
                     })
 
+                if cors:
+                    cors_items = []
+                    for item in cors:
+                        cors_items.append(item)
+
+                    item_vulnerabilities.append({
+                        "cors": cors_items
+                    })
+
                 findings["items"] = item_vulnerabilities
                 vulnerabilities.append(findings)
 
@@ -202,10 +214,28 @@ def print_json(nmap_object, default_text_if_empty=None):
             json_object = json.dumps(nmap_object, indent=2)
         else:
             json_object = json.dumps(nmap_object)
+            json_object = " ".join(json_object.splitlines())
         print(json_object)
     else:
         if default_text_if_empty:
             print(default_text_if_empty)
+
+
+def verbose(title, message):
+    if args.verbose:
+        if isinstance(message, str):
+            print(f"{title}: {message}")
+        elif isinstance(message, list):
+            print(f"{title}")
+            for item in message:
+                if isinstance(item, str):
+                    print(f"-- {item}")
+                elif isinstance(item, dict):
+                    for item2 in item.keys():
+                        if isinstance(item2, str) and (item2 == "hostname" or item2 == "address"):
+                            print(f"-- {item[item2]}")
+                        else:
+                            print(f"-- {item2}")
 
 
 def brute_force_directories(nmap_object):
@@ -274,19 +304,29 @@ def service_main():
 
 def main(perform_brute: bool):
     start_datetime = datetime.datetime.now()
+    verbose("Start", str(start_datetime))
 
     # Get IP addresses, scan, summarize and cleanup
     target_ips, domains = collect_target_ip_addresses(targets)
+    verbose("Found Target IPs", target_ips)
+    verbose("Found Domains", domains)
+
+    verbose("Port Scan", "Start")
     nmap_result: dict[Any, Any] = portscan(target_ips)
+    verbose("Nmap Scan Summary", "Start")
     summary = nmap_scan_summary(nmap_result, start_datetime)
+    verbose("Nmap Cleanup", "Start")
     nmap_result = cleanup_nmap_object(nmap_result, domains)
 
     # Analyze vulnerability results and add to general "flags" section.
     # Vulnerabilities are group over IP address and port.
     nmap_result['flags'] = []
+    verbose("Run Domain Checks", "Start")
     nmap_result = run_domain_checks(nmap_result, domains)
-    nmap_result = run_port_checks(nmap_result)
+    verbose("Run Port Checks", "Start")
+    nmap_result = run_port_checks(nmap_result, args.verbose)
 
+    verbose("Get Vulnerabilities", "Start")
     vulnerabilities = get_vulnerabilities(nmap_result)
     if vulnerabilities:
         for vulnerability in vulnerabilities:
@@ -295,6 +335,7 @@ def main(perform_brute: bool):
     nmap_result = cleanup_object(nmap_result)
 
     if perform_brute:
+        verbose("Brute Force Directories", "Start")
         brute_force_directories(nmap_result)
 
     # When performing large scans over multiple domains the importance
@@ -312,6 +353,7 @@ parser.add_argument("-H", "--hosts", help="List of hosts separated by commas", t
 parser.add_argument("-c", "--compare", action='store_true', help='Compare output to previous file')
 parser.add_argument("-f", "--file", action='store_true', help='Write json output to file')
 parser.add_argument("-p", "--pretty", action='store_true', help='Prettier output')
+parser.add_argument("-v", "--verbose", action='store_true', help='Verbose output')
 parser.add_argument("-wl", "--wordlist", help='Specify wordlist file with subdomains', type=str)
 parser.add_argument("--brutedir",
                     action='store_true',

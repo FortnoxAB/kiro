@@ -67,12 +67,12 @@ def eval_sts(contents: str) -> Tuple[int, list]:
 
 def eval_csp(contents: str) -> Tuple[int, list]:
     unsafe_rules = {
-        "default-src": ["*","http:","https:","https:*","http:*", "'unsafe-eval'", "data:", "'unsafe-inline'"],
-        "script-src": ["*","http:","https:","https:*","http:*", "'unsafe-eval'", "data:", "'unsafe-inline'"],
-        "frame-ancestors": ["*","http:","https:","https:*","http:*"],
-        "form-action": ["*","http:","https:","https:*","http:*"],
-        "object-src": ["*","http:","https:","https:*","http:*"],
-        "connect-src": ["*","http:","https:","https:*","http:*"]
+        "default-src": ["*", "http:", "https:", "https:*", "http:*", "'unsafe-eval'", "data:", "'unsafe-inline'"],
+        "script-src": ["*", "http:", "https:", "https:*", "http:*", "'unsafe-eval'", "data:", "'unsafe-inline'"],
+        "frame-ancestors": ["*", "http:", "https:", "https:*", "http:*"],
+        "form-action": ["*", "http:", "https:", "https:*", "http:*"],
+        "object-src": ["*", "http:", "https:", "https:*", "http:*"],
+        "connect-src": ["*", "http:", "https:", "https:*", "http:*"]
     }
 
     # There are no universal rules for "safe" and "unsafe" CSP directives, but we apply some common sense here to
@@ -266,28 +266,35 @@ class SecurityHeaders:
     @staticmethod
     def analyze(headers) -> list:
         findings = []
-        sh = SecurityHeaders(headers)
-        result = sh.__analyze()
 
-        if not result:
-            return findings
+        try:
+            result = None
 
-        for header, value in result.items():
-            if value['warn']:
-                notes = []
+            if headers:
+                sh = SecurityHeaders(headers)
+                result = sh.__analyze()
 
-                if not value['defined']:
-                    message = "missing"
-                else:
-                    message = value['contents']
-                    notes = value['notes']
+            if not result:
+                return findings
 
-                finding = {
-                    header: message
-                }
-                if notes:
-                    finding.update({"notes": notes})
+            for header, value in result.items():
+                if value['warn']:
+                    notes = []
 
-                findings.append(finding)
+                    if not value['defined']:
+                        message = "missing"
+                    else:
+                        message = value['contents']
+                        notes = value['notes']
+
+                    finding = {
+                        header: message
+                    }
+                    if notes:
+                        finding.update({"notes": notes})
+
+                    findings.append(finding)
+        except Exception as e:
+            print("Analyze Security Headers exception: " + str(e))
 
         return findings
