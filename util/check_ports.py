@@ -41,19 +41,19 @@ def run_port_checks(nmap_object, verbose=False):
 
                     if proto:
                         http_headers, http_cookies = (
-                            get_all_http_headers(ip, domain, port_id, http_protocol))
+                            get_all_http_headers(ip, domain, port_id, http_protocol, verbose))
 
                         if http_headers:
-                            security_headers = SecurityHeaders.analyze(http_headers)
+                            security_headers = SecurityHeaders.analyze(http_headers, verbose)
                             if security_headers:
                                 port.update({"security_headers": security_headers})
 
                         if http_cookies or http_headers:
-                            cookie_flags = CookieFlags.analyze(http_headers, http_cookies)
+                            cookie_flags = CookieFlags.analyze(http_headers, http_cookies, verbose)
                             if cookie_flags:
                                 port.update({"cookie_flags": cookie_flags})
 
-                        cors = Cors.analyze(domain, port_id, http_protocol)
+                        cors = Cors.analyze(domain, port_id, http_protocol, verbose)
                         if cors:
                             port.update({"cors": cors})
 

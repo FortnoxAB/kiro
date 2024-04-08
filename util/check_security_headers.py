@@ -264,7 +264,7 @@ class SecurityHeaders:
         self.headers = {key.lower(): val.lower() for key, val in headers.items()}
 
     @staticmethod
-    def analyze(headers) -> list:
+    def analyze(headers, verbose=False) -> list:
         findings = []
 
         try:
@@ -295,6 +295,8 @@ class SecurityHeaders:
 
                     findings.append(finding)
         except Exception as e:
-            print("Analyze Security Headers exception: " + str(e))
+            if verbose:
+                print("Analyze Security Headers exception: " + str(e))
+            pass
 
         return findings

@@ -275,11 +275,11 @@ def brute_force_directories(nmap_object):
 
                                 port['brut'] = brute_result
                         except Exception as e:
-                            print('Brute Force - PORT exception: ' + str(e))
+                            # print('Brute Force - PORT exception: ' + str(e))
                             if port and not port['brut']:
                                 port['brut'] = ['Test failed']
             except Exception as e:
-                print('Brute Force - exception: ' + str(e))
+                # print('Brute Force - exception: ' + str(e))
                 continue
 
 
