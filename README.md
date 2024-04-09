@@ -53,7 +53,7 @@ options:
 Examples:
 ```
 python3 kiro.py -H security.guru,10.0.0.0/8 --pretty
-python3 kiro.py -H www.fortnox.se -v
+python3 kiro.py -H security.guru -v
 docker run -e KIRO_TARGETS=security.guru,10.0.0.0/8 quay.io/fortnox/kiro:0.1
 ```
 
