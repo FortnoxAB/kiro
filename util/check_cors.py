@@ -49,7 +49,7 @@ class Cors:
         self.http_protocol = http_protocol
 
     @staticmethod
-    def analyze(domain, port, http_protocol) -> list:
+    def analyze(domain, port, http_protocol, verbose=False) -> list:
         findings = []
 
         try:
@@ -62,6 +62,8 @@ class Cors:
             for key, val in result.items():
                 findings.append({key: val})
         except Exception as e:
-            print("Analyze CORS exception: " + str(e))
+            if verbose:
+                print("Analyze CORS exception: " + str(e))
+            pass
 
         return findings

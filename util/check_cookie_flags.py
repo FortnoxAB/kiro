@@ -58,7 +58,7 @@ class CookieFlags:
         self.cookies = {key.lower(): val for key, val in cookies.items()}
 
     @staticmethod
-    def analyze(headers, cookies) -> list:
+    def analyze(headers, cookies, verbose=False) -> list:
         findings = []
 
         try:
@@ -71,6 +71,8 @@ class CookieFlags:
             for key, val in result.items():
                 findings.append({key: val})
         except Exception as e:
-            print("Analyze Cookies exception: " + str(e))
+            if verbose:
+                print("Analyze Cookies exception: " + str(e))
+            pass
 
         return findings

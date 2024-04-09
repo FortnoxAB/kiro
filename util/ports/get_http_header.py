@@ -22,7 +22,7 @@ def get_http_header(ip, host_header, port, response_header):
         return False, f"An error occurred: {e}"
 
 
-def get_all_http_headers(ip, host_header, port, proto):
+def get_all_http_headers(ip, host_header, port, proto, verbose=False):
     url = f"{proto.lower()}://{ip}:{port}"
     headers = {'Host': host_header}
 
@@ -34,5 +34,6 @@ def get_all_http_headers(ip, host_header, port, proto):
 
         return headers, cookies
     except requests.exceptions.RequestException as e:
-        print(f"An error occurred: {e}")
+        if verbose:
+            print(f"An error occurred: {e}")
         return None, None

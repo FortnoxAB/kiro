@@ -1,10 +1,11 @@
 from netaddr import IPNetwork
+from typing import Any
 import socket
 import sys
 import nmap3  # https://pypi.org/project/python3-nmap/
 
 
-def portscan(targets):
+def portscan(targets) -> dict[Any, Any]:
     """
     Perform port scan for all tcp ports.
     nmap if configured to run vulners scripts for each open port

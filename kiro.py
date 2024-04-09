@@ -56,7 +56,7 @@ def nmap_scan_summary(nmap_object, start):
     runtime = nmap_object.get("runtime", {})
     return {
         "start": str(start),
-        "finished": str(datetime.datetime.now()),
+        "finished": current_datetime(),
         "summary": runtime.get("summary"),
         "elapsed": runtime.get("elapsed"),
         "exit": runtime.get("exit")
@@ -221,21 +221,19 @@ def print_json(nmap_object, default_text_if_empty=None):
             print(default_text_if_empty)
 
 
-def verbose(title, message):
+def current_datetime():
+    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def verbose(data, category=None):
     if args.verbose:
-        if isinstance(message, str):
-            print(f"{title}: {message}")
-        elif isinstance(message, list):
-            print(f"{title}")
-            for item in message:
-                if isinstance(item, str):
-                    print(f"-- {item}")
-                elif isinstance(item, dict):
-                    for item2 in item.keys():
-                        if isinstance(item2, str) and (item2 == "hostname" or item2 == "address"):
-                            print(f"-- {item[item2]}")
-                        else:
-                            print(f"-- {item2}")
+        if category == "targets":
+            print(f"{len(data)} target(s) found")
+            for domain in data:
+                if isinstance(domain, dict):
+                    print(f"-- {domain['hostname']} ({domain['address']})")
+        elif isinstance(data, str):
+            print(f"{data}")
 
 
 def brute_force_directories(nmap_object):
@@ -275,11 +273,11 @@ def brute_force_directories(nmap_object):
 
                                 port['brut'] = brute_result
                         except Exception as e:
-                            print('Brute Force - PORT exception: ' + str(e))
+                            # print('Brute Force - PORT exception: ' + str(e))
                             if port and not port['brut']:
                                 port['brut'] = ['Test failed']
             except Exception as e:
-                print('Brute Force - exception: ' + str(e))
+                # print('Brute Force - exception: ' + str(e))
                 continue
 
 
@@ -297,36 +295,43 @@ def service_main():
             compare_result = compare_dicts(previous_nmap_result, nmap_result)
             print_json(compare_result, )
 
-        # Sleep for a bit or we will hog CPUs
+        # Sleep for a bit or we will hog CPUs.
         time.sleep(os.environ.get('KIRO_INTERVAL', 30))
         first_run = False
 
 
 def main(perform_brute: bool):
-    start_datetime = datetime.datetime.now()
-    verbose("Start", str(start_datetime))
+    start_datetime = current_datetime()
+    verbose(f"Started @ {str(start_datetime)}")
 
-    # Get IP addresses, scan, summarize and cleanup
+    # Get IP addresses, scan, summarize and cleanup.
     target_ips, domains = collect_target_ip_addresses(targets)
-    verbose("Found Target IPs", target_ips)
-    verbose("Found Domains", domains)
+    verbose(domains, "targets")
 
-    verbose("Port Scan", "Start")
-    nmap_result: dict[Any, Any] = portscan(target_ips)
-    verbose("Nmap Scan Summary", "Start")
+    # Make nmap scan per ip address and add all results into one.
+    target_ip_counter = 0
+    nmap_result = {"nmap_summary": {}}
+    verbose(f"Start nmap scan of {len(target_ips)} target(s)")
+    for target_ip in target_ips:
+        target_ip_counter += 1
+        verbose(f"-- Scanning {str(target_ip)} ({target_ip_counter}/{len(target_ips)}) " + current_datetime())
+        nmap_result_target_ip: dict[Any, Any] = portscan(target_ips)
+        nmap_result.update(nmap_result_target_ip)
+
     summary = nmap_scan_summary(nmap_result, start_datetime)
-    verbose("Nmap Cleanup", "Start")
+    nmap_result.update({"nmap_summary": summary})
+
     nmap_result = cleanup_nmap_object(nmap_result, domains)
 
     # Analyze vulnerability results and add to general "flags" section.
     # Vulnerabilities are group over IP address and port.
     nmap_result['flags'] = []
-    verbose("Run Domain Checks", "Start")
+    verbose("Do Domain Checks")
     nmap_result = run_domain_checks(nmap_result, domains)
-    verbose("Run Port Checks", "Start")
+    verbose("Do Port Checks")
     nmap_result = run_port_checks(nmap_result, args.verbose)
 
-    verbose("Get Vulnerabilities", "Start")
+    verbose("Do Vulnerability Checks")
     vulnerabilities = get_vulnerabilities(nmap_result)
     if vulnerabilities:
         for vulnerability in vulnerabilities:
@@ -335,13 +340,8 @@ def main(perform_brute: bool):
     nmap_result = cleanup_object(nmap_result)
 
     if perform_brute:
-        verbose("Brute Force Directories", "Start")
+        verbose("Do Directory Brute Force")
         brute_force_directories(nmap_result)
-
-    # When performing large scans over multiple domains the importance
-    # of logging the actual scan summary's metadata seams reasonable
-    print_json("")
-    print_json(summary)
 
     return nmap_result
 
