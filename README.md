@@ -61,9 +61,7 @@ docker run -e KIRO_TARGETS=security.guru,10.0.0.0/8 quay.io/fortnox/kiro:0.1
 The output is organized in sections:
 ```
 {
-    < Header >
-}
-{
+    "nmap_summary": { ... },
     "IP1": { ... },
     "IP2": { ... },
     "IP3": { ... },
@@ -76,11 +74,11 @@ Running below scan against a local python webserver exposing port 8000.
 $ python3 kiro.py -p -H 127.0.0.1
 ```
 
-### Header  
+### nmap summary  
 ```
-{
-  "start": "2023-11-30 08:32:04.031768",
-  "finished": "2023-11-30 08:32:11.400543",
+"nmap_summary": {
+  "start": "2023-11-30 08:32:04",
+  "finished": "2023-11-30 08:32:11",
   "summary": "Nmap done at Thu Nov 30 08:32:11 2023; 1 IP address (1 host up) scanned in 7.32 seconds",
   "elapsed": "7.32",
   "exit": "success"

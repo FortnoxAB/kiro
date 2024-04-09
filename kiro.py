@@ -56,7 +56,7 @@ def nmap_scan_summary(nmap_object, start):
     runtime = nmap_object.get("runtime", {})
     return {
         "start": str(start),
-        "finished": str(datetime.datetime.now()),
+        "finished": current_datetime(),
         "summary": runtime.get("summary"),
         "elapsed": runtime.get("elapsed"),
         "exit": runtime.get("exit")
@@ -221,6 +221,10 @@ def print_json(nmap_object, default_text_if_empty=None):
             print(default_text_if_empty)
 
 
+def current_datetime():
+    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
 def verbose(data, category=None):
     if args.verbose:
         if category == "targets":
@@ -291,30 +295,32 @@ def service_main():
             compare_result = compare_dicts(previous_nmap_result, nmap_result)
             print_json(compare_result, )
 
-        # Sleep for a bit or we will hog CPUs
+        # Sleep for a bit or we will hog CPUs.
         time.sleep(os.environ.get('KIRO_INTERVAL', 30))
         first_run = False
 
 
 def main(perform_brute: bool):
-    start_datetime = datetime.datetime.now()
+    start_datetime = current_datetime()
     verbose(f"Started @ {str(start_datetime)}")
 
-    # Get IP addresses, scan, summarize and cleanup
+    # Get IP addresses, scan, summarize and cleanup.
     target_ips, domains = collect_target_ip_addresses(targets)
     verbose(domains, "targets")
 
     # Make nmap scan per ip address and add all results into one.
     target_ip_counter = 0
-    nmap_result = {}
+    nmap_result = {"nmap_summary": {}}
     verbose(f"Start nmap scan of {len(target_ips)} target(s)")
     for target_ip in target_ips:
         target_ip_counter += 1
-        verbose(f"-- Scanning {str(target_ip)} ({target_ip_counter}/{len(target_ips)})")
+        verbose(f"-- Scanning {str(target_ip)} ({target_ip_counter}/{len(target_ips)}) " + current_datetime())
         nmap_result_target_ip: dict[Any, Any] = portscan(target_ips)
         nmap_result.update(nmap_result_target_ip)
 
     summary = nmap_scan_summary(nmap_result, start_datetime)
+    nmap_result.update({"nmap_summary": summary})
+
     nmap_result = cleanup_nmap_object(nmap_result, domains)
 
     # Analyze vulnerability results and add to general "flags" section.
@@ -336,11 +342,6 @@ def main(perform_brute: bool):
     if perform_brute:
         verbose("Do Directory Brute Force")
         brute_force_directories(nmap_result)
-
-    # When performing large scans over multiple domains the importance
-    # of logging the actual scan summary's metadata seams reasonable
-    print_json("")
-    print_json(summary)
 
     return nmap_result
 

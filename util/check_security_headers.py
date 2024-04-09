@@ -237,10 +237,15 @@ class SecurityHeaders:
                 if not eval_func:
                     raise SecurityHeadersException("No evaluation function found for header: {}".format(header))
                 res, notes = eval_func(self.headers[header])
+                content = str(self.headers[header])
+
+                if header == "content-security-policy" and len(content) > 50:
+                    content = "Too long to show (" + str(len(content)) + " characters)"
+
                 retval[header] = {
                     'defined': True,
                     'warn': res == EVAL_WARN,
-                    'contents': self.headers[header],
+                    'contents': content,
                     'notes': notes,
                 }
 
