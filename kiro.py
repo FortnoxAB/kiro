@@ -1,7 +1,7 @@
 from typing import Any
 
 from util.portscan import *
-from util.compare import compare_files_as_json, compare_dicts
+from util.compare import compare_files_as_json, compare_dicts, get_value_if_key_exists
 from util.dns_enum import dns_enum
 from util.check_domain import run_domain_checks
 from util.check_ports import run_port_checks
@@ -208,7 +208,54 @@ def get_vulnerabilities(nmap_object) -> list:
     return vulnerabilities
 
 
+def watch(nmap_object):
+    if not nmap_object:
+        return
+
+    # Load watch config file
+    # Loop all hosts from nmap result
+    #   For each hostname (multiple of the same) check against expected
+    #   ports and flags in watch config
+    # Loop all vulnerability flags
+    #   For each flag (unique per "hostname" and "port") continue to
+    #   loop the vulnerabilities that are stored in the property "items" as a list
+    #     For each vulnerability check if it is expected as stated in watch config.
+    # Return result
+
+    watch_config: dict[str, dict] = json.loads(open("./watch/watch_config.json").read())
+    difference = []
+
+    for current_ip, current_values in nmap_object.items():
+        if not is_valid_ip(current_ip):
+            continue
+
+        nmap_hostname = current_values.get("hostname")
+
+        for nmap_port in current_values.get("ports", []):
+            nmap_portid = nmap_port.get("portid")
+            nmap_service_name = get_value_if_key_exists(nmap_port.get("service"), "name")
+
+            if nmap_hostname not in watch_config.keys():
+                print(f"{nmap_hostname} - expected hostname {nmap_hostname} is missing")
+                continue
+
+            watch_hostname: dict[str, dict] = watch_config.get(nmap_hostname)
+            if nmap_portid not in watch_hostname.keys():
+                print(f"{nmap_hostname} - expected port {nmap_portid} is missing")
+                continue
+
+            watch_port: dict[str, Any] = watch_hostname.get(nmap_portid)
+            if nmap_service_name != watch_port.get("service_name"):
+                print(f"{nmap_hostname}:{nmap_portid} - expected service name {watch_port.get('service_name')} "
+                      f"changed to {nmap_service_name}")
+                continue
+
+
 def print_json(nmap_object, default_text_if_empty=None):
+    if args.watch:
+        print("watch")
+        watch(nmap_object)
+
     if nmap_object:
         if args.pretty:
             json_object = json.dumps(nmap_object, indent=2)
@@ -353,13 +400,12 @@ parser.add_argument("-H", "--hosts", help="List of hosts separated by commas", t
 parser.add_argument("-c", "--compare", action='store_true', help='Compare output to previous file')
 parser.add_argument("-f", "--file", action='store_true', help='Write json output to file')
 parser.add_argument("-p", "--pretty", action='store_true', help='Prettier output')
+parser.add_argument("-w", "--watch", action='store_true', help='Supply config of expected domains and ports')
 parser.add_argument("-v", "--verbose", action='store_true', help='Verbose output')
 parser.add_argument("-wl", "--wordlist", help='Specify wordlist file with subdomains', type=str)
-parser.add_argument("--brutedir",
-                    action='store_true',
+parser.add_argument("-br", "--brutedir", action='store_true',
                     help='Brute force common directories and files for web facing ports (not available for service)')
-parser.add_argument("--brutephp",
-                    action='store_true',
+parser.add_argument("--brutephp", action='store_true',
                     help='Brute force common php files for web facing ports (not available for service)')
 
 args = parser.parse_args()

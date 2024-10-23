@@ -1,6 +1,9 @@
+from typing import Any
+
+
 class CookieFlags:
     def __analyze(self):
-        retval = {}
+        retval: dict[str, Any] = {}
         cookie_list = []
 
         # Loop through headers and evaluate the risk

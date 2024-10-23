@@ -1,0 +1,65 @@
+{
+  "www.fortnox.se": {
+    "80": {
+      "service_name": "http",
+      "expected_flags": [
+        {
+          "nmap_vulners": [
+            {
+              "name": "https-redirect"
+            }
+          ]
+        },
+        {
+          "security_headers": [
+            {
+              "x-frame-options": "missing"
+            },
+            {
+              "strict-transport-security": "missing"
+            },
+            {
+              "content-security-policy": "missing"
+            },
+            {
+              "x-content-type-options": "missing"
+            },
+            {
+              "referrer-policy": "missing"
+            },
+            {
+              "permissions-policy": "missing"
+            }
+          ]
+        }
+      ]
+    },
+    "443": {
+      "service_name": "https",
+      "expected_flags": [
+        {
+          "nmap_vulners": []
+        },
+        {
+          "security_headers": [
+            {
+              "content-security-policy": [
+                "No directive default-src nor default-src",
+                "No directive script-src nor default-src",
+                "No directive form-action nor default-src",
+                "No directive object-src nor default-src"
+              ]
+            },
+            {
+              "permissions-policy": [
+                "Privacy-sensitive feature 'geolocation' is not restricted",
+                "Privacy-sensitive feature 'microphone' is not restricted",
+                "Privacy-sensitive feature 'payment' is not restricted"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

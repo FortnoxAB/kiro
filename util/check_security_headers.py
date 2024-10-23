@@ -1,6 +1,5 @@
 import re
-from typing import Tuple
-
+from typing import Tuple, Any
 
 """
 The MIT License (MIT)
@@ -225,7 +224,7 @@ class SecurityHeaders:
     ]
 
     def __analyze(self):
-        retval = {}
+        retval: dict[str, Any] = {}
 
         if not self.headers:
             raise SecurityHeadersException("Headers not found")
@@ -245,13 +244,20 @@ class SecurityHeaders:
                 retval[header] = {
                     'defined': True,
                     'warn': res == EVAL_WARN,
+                    'name': header,
                     'contents': content,
                     'notes': notes,
                 }
 
             else:
                 warn = self.SECURITY_HEADERS_DICT[header].get('recommended')
-                retval[header] = {'defined': False, 'warn': warn, 'contents': None, 'notes': []}
+                retval[header] = {
+                    'defined': False,
+                    'warn': warn,
+                    'name': header,
+                    'contents': None,
+                    'notes': []
+                }
 
         for header in self.SERVER_VERSION_HEADERS:
             if header in self.headers:
@@ -259,6 +265,7 @@ class SecurityHeaders:
                 retval[header] = {
                     'defined': True,
                     'warn': res == EVAL_WARN,
+                    'name': header,
                     'contents': self.headers[header],
                     'notes': notes,
                 }
@@ -285,15 +292,20 @@ class SecurityHeaders:
             for header, value in result.items():
                 if value['warn']:
                     notes = []
+                    missing = False
 
                     if not value['defined']:
+                        missing = True
                         message = "missing"
                     else:
                         message = value['contents']
                         notes = value['notes']
 
                     finding = {
-                        header: message
+                        "name": header,
+                        "missing": missing,
+                        "message": message,
+                        "notes": []
                     }
                     if notes:
                         finding.update({"notes": notes})

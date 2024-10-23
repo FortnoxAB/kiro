@@ -127,12 +127,18 @@ $ python3 kiro.py -p -H 127.0.0.1
         }]
         },{
           "security_headers": [{
-              "content-security-policy": "default-src 'self';script-src 'self' 'unsafe-inline';frame-ancestors 'none'",
+              "name": "content-security-policy",
+              "missing": false,
+              "message": "default-src 'self';script-src 'self' 'unsafe-inline';frame-ancestors 'none'",
               "notes": ["Unsafe source 'unsafe-inline' in directive script-src"]
             },{
-              "x-frame-options": "missing"
+              "name": "x-frame-options",
+              "missing": true,
+              "message": "missing"
             },{
-              "server": "simplehttp/0.6 python/3.10.12"
+              "name": "server",
+              "missing": false,
+              "message": "simplehttp/0.6 python/3.10.12"
           }]
         },
         {
@@ -144,7 +150,7 @@ $ python3 kiro.py -p -H 127.0.0.1
         },
         {
           "cors": [{
-              "misconficuration 1": "descriptive text"
+              "misconfiguration 1": "descriptive text"
             }]
         }
       ]
